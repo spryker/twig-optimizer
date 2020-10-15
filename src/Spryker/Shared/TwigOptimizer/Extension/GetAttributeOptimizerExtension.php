@@ -1,40 +1,49 @@
 <?php
 
-/*
- * (c) 2016 David Stone
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
+/**
+ * Copyright © 2016-present Spryker Systems GmbH. All rights reserved.
+ * Use of this software requires acceptance of the Evaluation License Agreement. See LICENSE file.
  */
-class Twig_Optimizations_Extension_GetAttributeOptimizer extends Twig_Extension implements Twig_Extension_InitRuntimeInterface
+
+namespace Spryker\Shared\TwigOptimizer\Extension;
+
+use Twig\Environment;
+use Twig\Extension\AbstractExtension;
+use Twig\Template;
+use Twig\TwigFunction;
+
+class GetAttributeOptimizerExtension extends AbstractExtension
 {
-    private $types = array();
-    
+    private $types = [];
+
     private $env;
 
     public function __construct($registerShutdownFunction = true)
     {
-        if($registerShutdownFunction) {
-            register_shutdown_function(array($this, 'recompileOptimizableTemplates'));
+        if ($registerShutdownFunction) {
+            register_shutdown_function([$this, 'recompileOptimizableTemplates']);
         }
     }
 
-    public function initRuntime(Twig_Environment $environment)
+    /**
+     * @return void
+     */
+    public function initRuntime(Environment $environment)
     {
         $this->env = $environment;
     }
 
     public function getNodeVisitors()
     {
-        return array(new Twig_Optimizations_NodeVisitor_GetAttributeOptimizer());
+        return [new GetAttributeOptimizer()];
     }
 
     public function getFunctions()
     {
-        return array(
-            new Twig_SimpleFunction('optimizer_twig_get_attribute', array($this, 'getAttribute')),
-            new Twig_SimpleFunction('isset', 'isset'),
-        );
+        return [
+            new TwigFunction('optimizer_twig_get_attribute', [$this, 'getAttribute']),
+            new TwigFunction('isset', 'isset'),
+        ];
     }
 
     public function getName()
@@ -47,18 +56,21 @@ class Twig_Optimizations_Extension_GetAttributeOptimizer extends Twig_Extension 
         return $this->types;
     }
 
-    public function getAttribute(Twig_Template $template, $nodeId, $object, $item, $result)
+    public function getAttribute(Template $template, $nodeId, $object, $item, $result)
     {
         $templateName = $template->getTemplateName();
 
-        $this->types[$templateName][$nodeId] = array('attr' => (string) $item, 'class' => is_array($object) ? 'array' : (is_object($object) ? get_class($object) : false));
+        $this->types[$templateName][$nodeId] = ['attr' => (string)$item, 'class' => is_array($object) ? 'array' : (is_object($object) ? get_class($object) : false)];
 
         return $result;
     }
 
+    /**
+     * @return void
+     */
     public function recompileOptimizableTemplates()
     {
-        if(empty($this->env)) {
+        if (empty($this->env)) {
             return;
         }
         $cache = $this->env->getCache(false);

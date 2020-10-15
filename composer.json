@@ -1,25 +1,20 @@
 {
-    "name": "dstone/twig-optimizations",
-    "description": "Twig extensions which enable some experimental optimizations on compiled code",
-    "keywords": ["twig","getAttribute", "optimzations"],
-    "homepage": "https://github.com/superdav42/TwigOptimizations",
+    "name": "spryker/twig-optimizer",
+    "description": "Twig extensions to optimize Twig performance",
+    "keywords": ["twig", "optimzations"],
     "type": "library",
     "license": "MIT",
-    "authors": [
-        {
-            "name": "David Stone",
-            "email": "david@nnucomputerwhiz.com"
-        }
-    ],
     "require": {
-        "twig/twig": "~1.27|~2.0"
+        "twig/twig": "^1.0.0 || ^2.0.0 || ^3.0.0"
     },
     "autoload": {
-        "psr-0": { "Twig_Optimizations_": "lib/" }
+        "psr-4": {
+          "Spryker\\Shared\\TwigOptimizer\\": "src/Spryker/Shared/TwigOptimizer"
+        }
     },
     "autoload-dev": {
-        "psr-0" : {
-            "Twig_Tests_" : "test/"
+        "psr-4" : {
+            "SprykerTest\\Shared\\TwigOptimizer\\" : "tests/SprykerTest/Shared/TwigOptimizer"
         }
     }
 }
