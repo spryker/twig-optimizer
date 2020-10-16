@@ -7,6 +7,7 @@
 
 namespace Spryker\Shared\TwigOptimizer\Extension;
 
+use Spryker\Shared\TwigOptimizer\NodeVisitor\GetAttributeOptimizerVisitor;
 use Twig\Environment;
 use Twig\Extension\AbstractExtension;
 use Twig\Template;
@@ -16,26 +17,23 @@ class GetAttributeOptimizerExtension extends AbstractExtension
 {
     private $types = [];
 
-    private $env;
+    private $twig;
 
-    public function __construct($registerShutdownFunction = true)
+    /**
+     * @param Environment $twig
+     * @param bool $registerShutdownFunction
+     */
+    public function __construct(Environment $twig, $registerShutdownFunction = true)
     {
+        $this->twig = $twig;
         if ($registerShutdownFunction) {
             register_shutdown_function([$this, 'recompileOptimizableTemplates']);
         }
     }
 
-    /**
-     * @return void
-     */
-    public function initRuntime(Environment $environment)
-    {
-        $this->env = $environment;
-    }
-
     public function getNodeVisitors()
     {
-        return [new GetAttributeOptimizer()];
+        return [new GetAttributeOptimizerVisitor()];
     }
 
     public function getFunctions()
@@ -46,20 +44,13 @@ class GetAttributeOptimizerExtension extends AbstractExtension
         ];
     }
 
-    public function getName()
-    {
-        return 'attr_optimizer';
-    }
-
     public function getTypes()
     {
         return $this->types;
     }
 
-    public function getAttribute(Template $template, $nodeId, $object, $item, $result)
+    public function getAttribute($templateName, $nodeId, $object, $item, $result)
     {
-        $templateName = $template->getTemplateName();
-
         $this->types[$templateName][$nodeId] = ['attr' => (string)$item, 'class' => is_array($object) ? 'array' : (is_object($object) ? get_class($object) : false)];
 
         return $result;
@@ -70,14 +61,18 @@ class GetAttributeOptimizerExtension extends AbstractExtension
      */
     public function recompileOptimizableTemplates()
     {
-        if (empty($this->env)) {
+        if (empty($this->twig)) {
             return;
         }
-        $cache = $this->env->getCache(false);
 
-        foreach ($this->env->getExtension('attr_optimizer')->getTypes() as $name => $types) {
-            $cls = $this->env->getTemplateClass($name);
-            $content = $this->env->compileSource($this->env->getLoader()->getSource($name), $name);
+        $cache = $this->twig->getCache(false);
+        $loader = $this->twig->getLoader();
+
+        foreach ($this->twig->getExtension(static::class)->getTypes() as $name => $types) {
+            $cls = $this->twig->getTemplateClass($name);
+            $loader = $this->twig->getLoader();
+            $content = $this->twig->compileSource($this->twig->getLoader()->getSource($name), $name);
+
             $key = $cache->generateKey($name, $cls);
             $cache->write($key, $content);
             if (function_exists('opcache_invalidate')) {

@@ -8,6 +8,10 @@
 namespace Spryker\Shared\TwigOptimizer\NodeVisitor;
 
 use ReflectionClass;
+use Spryker\Shared\TwigOptimizer\Extension\GetAttributeOptimizerExtension;
+use Spryker\Shared\TwigOptimizer\Node\Expression\ArrayAccessExpression;
+use Spryker\Shared\TwigOptimizer\Node\Expression\Binary\InstanceOfBinary;
+use Spryker\Shared\TwigOptimizer\Node\Expression\GetPropertyExpression;
 use Twig\Environment;
 use Twig\Node\Expression\ConditionalExpression;
 use Twig\Node\Expression\ConstantExpression;
@@ -20,7 +24,7 @@ use Twig\Node\Node;
 use Twig\NodeVisitor\AbstractNodeVisitor;
 use Twig\Template;
 
-class GetAttributeOptimizer extends AbstractNodeVisitor
+class GetAttributeOptimizerVisitor extends AbstractNodeVisitor
 {
     private $index = 0;
 
@@ -42,8 +46,8 @@ class GetAttributeOptimizer extends AbstractNodeVisitor
     protected function doEnterNode(Node $node, Environment $env)
     {
         if ($node instanceof ModuleNode) {
-            $allTypes = $env->getExtension('attr_optimizer')->getTypes();
-            $templateName = $node->getAttribute('filename');
+            $allTypes = $env->getExtension(GetAttributeOptimizerExtension::class)->getTypes();
+            $templateName = $node->getTemplateName();
 
             if (isset($allTypes[$templateName])) {
                 $this->types = $allTypes[$templateName];
@@ -154,16 +158,16 @@ class GetAttributeOptimizer extends AbstractNodeVisitor
         $testExpr = new InstanceOfBinary(
             $nameNode,
             $type['class'],
-            $node->getLine()
+            $node->getTemplateLine()
         );
 
         if ($node->getAttribute('is_defined_test')) {
-            $attrNode = new ConstantExpression(true, $node->getLine());
+            $attrNode = new ConstantExpression(true, $node->getTemplateLine());
         } else {
             $attrNode = new GetPropertyExpression(
                 clone $node->getNode('node'),
                 $type['attr'],
-                $node->getLine()
+                $node->getTemplateLine()
             );
         }
 
@@ -172,7 +176,7 @@ class GetAttributeOptimizer extends AbstractNodeVisitor
                 $testExpr,
                 $attrNode,
                 $node,
-                $node->getLine()
+                $node->getTemplateLine()
             );
         } else {
             return $node;
@@ -186,17 +190,17 @@ class GetAttributeOptimizer extends AbstractNodeVisitor
         $testExpr = new InstanceOfBinary(
             $nameNode,
             $type['class'],
-            $node->getLine()
+            $node->getTemplateLine()
         );
 
         if ($node->getAttribute('is_defined_test')) {
-            $attrNode = new ConstantExpression(true, $node->getLine());
+            $attrNode = new ConstantExpression(true, $node->getTemplateLine());
         } else {
             $attrNode = new MethodCallExpression(
                 clone $node->getNode('node'),
                 $type['attr'],
                 $node->getNode('arguments'),
-                $node->getLine()
+                $node->getTemplateLine()
             );
         }
 
@@ -205,25 +209,25 @@ class GetAttributeOptimizer extends AbstractNodeVisitor
                 $testExpr,
                 $attrNode,
                 $node,
-                $node->getLine()
+                $node->getTemplateLine()
             );
         } else {
             return $node;
         }
     }
 
-    private function getArrayAccessNode($node)
+    private function getArrayAccessNode(Node $node)
     {
         $originalAttributeNode = $node->getNode('attribute');
 
         $attrNode = new ArrayAccessExpression(
             clone $node->getNode('node'),
             $originalAttributeNode,
-            $node->getLine()
+            $node->getTemplateLine()
         );
 
         if ($node->getAttribute('is_defined_test')) {
-            $simpleAttrNode = new ConstantExpression(true, $node->getLine());
+            $simpleAttrNode = new ConstantExpression(true, $node->getTemplateLine());
         } elseif ($originalAttributeNode instanceof FunctionExpression && $originalAttributeNode->getAttribute('name') === 'optimizer_twig_get_attribute') {
             $realGetAttr = $originalAttributeNode->getNode('arguments')->getNode(4);
 
@@ -237,19 +241,19 @@ class GetAttributeOptimizer extends AbstractNodeVisitor
 
         $testExpr = new FunctionExpression(
             'isset',
-            new Node([$attrNode], [], $node->getLine()),
-            $node->getLine()
+            new Node([$attrNode], [], $node->getTemplateLine()),
+            $node->getTemplateLine()
         );
 
         return new ConditionalExpression(
             $testExpr,
             $simpleAttrNode,
             $node,
-            $node->getLine()
+            $node->getTemplateLine()
         );
     }
 
-    private function getRecordGetAttributeCallsNode($node)
+    private function getRecordGetAttributeCallsNode(Node $node)
     {
         $nameNode = clone $node->getNode('node');
         $nameNode->setAttribute('ignore_strict_check', true);
@@ -258,16 +262,16 @@ class GetAttributeOptimizer extends AbstractNodeVisitor
             'optimizer_twig_get_attribute',
             new Node(
                 [
-                    new NameExpression('_self', $node->getLine()),
-                    new ConstantExpression($this->index, $node->getLine()),
+                    new NameExpression('_self', $node->getTemplateLine()),
+                    new ConstantExpression($this->index, $node->getTemplateLine()),
                     $nameNode,
                     $node->getNode('attribute'),
                     $node,
                 ],
                 [],
-                $node->getLine()
+                $node->getTemplateLine()
             ),
-            $node->getLine()
+            $node->getTemplateLine()
         );
     }
 }
