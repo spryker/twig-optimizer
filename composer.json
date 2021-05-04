@@ -1,7 +1,10 @@
 {
     "name": "spryker/twig-optimizer",
     "description": "Twig extensions to optimize Twig performance",
-    "keywords": ["twig", "optimzations"],
+    "keywords": [
+        "twig",
+        "optimzations"
+    ],
     "type": "library",
     "license": "MIT",
     "require": {
@@ -9,12 +12,12 @@
     },
     "autoload": {
         "psr-4": {
-          "Spryker\\Shared\\TwigOptimizer\\": "src/Spryker/Shared/TwigOptimizer"
+            "Spryker\\Shared\\TwigOptimizer\\": "src/Spryker/Shared/TwigOptimizer"
         }
     },
     "autoload-dev": {
-        "psr-4" : {
-            "SprykerTest\\Shared\\TwigOptimizer\\" : "tests/SprykerTest/Shared/TwigOptimizer"
+        "psr-4": {
+            "SprykerTest\\Shared\\TwigOptimizer\\": "tests/SprykerTest/Shared/TwigOptimizer"
         }
     }
 }
